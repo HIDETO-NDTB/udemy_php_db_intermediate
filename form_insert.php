@@ -3,6 +3,7 @@
 ob_start();
 session_start();
 
+// 共通関数の読み込み
 require_once "common_function.php";
 
 $view_data = [];
@@ -11,6 +12,9 @@ if (isset($_SESSION["output_buffer"])) {
 }
 
 unset($_SESSION["output_buffer"]);
+
+// CSRFトークンの取得
+$csrf_token = create_csrf_token();
 ?>
 
 
@@ -27,7 +31,16 @@ unset($_SESSION["output_buffer"]);
 </head>
 
 <body>
+  <?php if (
+      isset($view_data["error_csrf"]) &&
+      $view_data["error_csrf"] === true
+  ): ?>
+    <span class="error">CSRFトークンでエラーが起きました。正しい遷移を5分以内にして下さい。<br></span>
+  <?php endif; ?>
+
   <form action="./form_insert_fin.php" method="post">
+  <!-- トークンをhiddenで渡す。念の為、hでエスケープ処理を行う -->
+  <input type="hidden" name="csrf_token" value="<?php echo h($csrf_token); ?>">
     <?php if (
         isset($view_data["error_must_name"]) &&
         $view_data["error_must_name"] === true

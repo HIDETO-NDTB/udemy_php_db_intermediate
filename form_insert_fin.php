@@ -5,6 +5,9 @@ ob_start();
 // どこでバリデーションエラーがあったかをform_insert.phpに持っていく為にセッションを開始
 session_start();
 
+// 共通関数の読み込み
+require_once "common_function.php";
+
 // ユーザーデータを入れる配列
 $user_input_data = [];
 $param = $validate_param = [
@@ -61,6 +64,12 @@ if (
 // var_dump($error_flg);
 // var_dump($user_input_data);
 
+// CSRFチェック
+if (is_csrf_token() === false) {
+    $error_detail["error_csrf"] = true;
+    $error_flg = true;
+}
+
 if ($error_flg) {
     // エラー詳細をセッションに詰める
     $_SESSION["output_buffer"] = $error_detail;
@@ -70,4 +79,42 @@ if ($error_flg) {
     exit();
 }
 
-echo "OK";
+// DBに繋ぐ
+$dbh = get_dbh();
+$sql =
+    "INSERT INTO test_form (`name`, `post`, `address`, `birthday`, `created`, `updated`) VALUES (:name, :post, :address, :birthday, :created, :updated);";
+$pre = $dbh->prepare($sql);
+
+// 値のバインド
+$pre->bindValue(":name", $user_input_data["name"], PDO::PARAM_STR);
+$pre->bindValue(":post", $user_input_data["post"], PDO::PARAM_STR);
+$pre->bindValue(":address", $user_input_data["address"], PDO::PARAM_STR);
+// birthdayは年月日で分かれているので連結する
+$birthday = "{$user_input_data["birthday_yy"]}-{$user_input_data["birthday_mm"]}-{$user_input_data["birthday_dd"]}";
+$pre->bindValue(":birthday", $birthday, PDO::PARAM_STR);
+$pre->bindValue(":created", date("Y-m-d h:i:s"), PDO::PARAM_STR);
+$pre->bindValue(":updated", date("Y-m-d h:i:s"), PDO::PARAM_STR);
+
+// sqlの実行
+$r = $pre->execute();
+if ($r === false) {
+    echo "システムでエラーが起きました。";
+    exit();
+}
+
+// insertできたのでセッションを削除する
+unset($_SESSION["output_buffer"]);
+?>
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    入力頂き、ありがとうございます
+</body>
+</html>
