@@ -112,7 +112,7 @@ unset($_SESSION["output_buffer"]);
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>DB講座中級</title>
 </head>
 <body>
     入力頂き、ありがとうございます
