@@ -22,7 +22,19 @@ function h_digit($d)
 // ---------------------------------------
 // トークンの作成
 
+// front用
 function create_csrf_token()
+{
+    return _create_csrf_token("front");
+}
+
+// 管理画面用
+function create_csrf_token_admin()
+{
+    return _create_csrf_token("admin");
+}
+
+function _create_csrf_token($type)
 {
     $csrf_token = "";
     try {
@@ -45,32 +57,44 @@ function create_csrf_token()
     }
 
     // トークンを5個までに制御
-    if (isset($_SESSION["front"]["csrf_token"])) {
-        while (count(@$_SESSION["front"]["csrf_token"]) >= 5) {
-            array_shift($_SESSION["front"]["csrf_token"]);
+    if (isset($_SESSION[$type]["csrf_token"])) {
+        while (count(@$_SESSION[$type]["csrf_token"]) >= 5) {
+            array_shift($_SESSION[$type]["csrf_token"]);
         }
     }
 
     // セッションに格納
-    $_SESSION["front"]["csrf_token"][$csrf_token] = time();
+    $_SESSION[$type]["csrf_token"][$csrf_token] = time();
 
     return $csrf_token;
 }
 
-// トークンの確認
+// フロント用
 function is_csrf_token()
+{
+    return _is_csrf_token("front");
+}
+
+// 管理画面用
+function is_csrf_token_admin()
+{
+    return _is_csrf_token("admin");
+}
+
+// トークンの確認
+function _is_csrf_token($type)
 {
     $post_csrf_token = (string) @$_POST["csrf_token"];
 
     // セッションの中にPOST送信されたトークンがなければfalse
-    if (!isset($_SESSION["front"]["csrf_token"][$post_csrf_token])) {
+    if (!isset($_SESSION[$type]["csrf_token"][$post_csrf_token])) {
         return false;
     }
 
     // 寿命の把握
-    $ttl = $_SESSION["front"]["csrf_token"][$post_csrf_token];
+    $ttl = $_SESSION[$type]["csrf_token"][$post_csrf_token];
     // トークンの作成時間を削除
-    unset($_SESSION["front"]["csrf_token"][$post_csrf_token]);
+    unset($_SESSION[$type]["csrf_token"][$post_csrf_token]);
     // 寿命チェック(5分以内)
     if ($ttl + 300 <= time()) {
         return false;

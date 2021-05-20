@@ -45,7 +45,7 @@ $data = $pre->fetchAll(PDO::FETCH_ASSOC);
           <td><?php echo h($d["updated"]); ?></td>
           <td><a class="btn btn-primary" href="./admin_data_detail.php?test_form_id=<?php echo rawurldecode(
               $d["test_form_id"]
-          ); ?>">一覧</a></td>
+          ); ?>">詳細</a></td>
         </tr>
     <?php endforeach; ?>
     </table>

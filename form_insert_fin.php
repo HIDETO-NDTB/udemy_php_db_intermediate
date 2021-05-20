@@ -7,10 +7,11 @@ session_start();
 
 // 共通関数の読み込み
 require_once "common_function.php";
+require_once "test_form_data.php";
 
 // ユーザーデータを入れる配列
 $user_input_data = [];
-$param = $validate_param = [
+$param = [
     "name",
     "post",
     "address",
@@ -25,29 +26,16 @@ foreach ($param as $p) {
 }
 // var_dump($user_input_data);
 
-// バリデートの結果を表すflg
-$error_flg = false;
+// バリデーション
+$error_detail = error_validate($user_input_data);
 
-// エラー詳細を詰める配列
-$error_detail = [];
+// 誕生日の必須チェックと型チェック
+$param = ["birthday_yy", "birthday_mm", "birthday_dd"];
 
-// 必須チェック
-foreach ($validate_param as $p) {
+foreach ($param as $p) {
     if ($user_input_data[$p] === "") {
-        $error_flg = true;
         $error_detail["error_must_{$p}"] = true;
     }
-}
-
-// 郵便番号の型チェック
-if (preg_match("/\A[0-9]{3}[- ]?[0-9]{4}\z/", $user_input_data["post"]) !== 1) {
-    $error_flg = true;
-    $error_detail["error_format_post"] = true;
-}
-
-// 誕生日の型チェック
-$int_param = ["birthday_yy", "birthday_mm", "birthday_dd"];
-foreach ($int_param as $p) {
     $user_input_data[$p] = (int) $user_input_data[$p];
 }
 
@@ -59,7 +47,6 @@ if (
     ) === false
 ) {
     $error_detail["error_format_birthday"] = true;
-    $error_flg = true;
 }
 // var_dump($error_flg);
 // var_dump($user_input_data);
@@ -67,10 +54,9 @@ if (
 // CSRFチェック
 if (is_csrf_token() === false) {
     $error_detail["error_csrf"] = true;
-    $error_flg = true;
 }
 
-if ($error_flg) {
+if (!empty($error_detail)) {
     // エラー詳細をセッションに詰める
     $_SESSION["output_buffer"] = $error_detail;
     // 入力内容保持の為にユーザー入力値をセッションに詰める(キーに同じ名前がないことを前提に += で詰める)

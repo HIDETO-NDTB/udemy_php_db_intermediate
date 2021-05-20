@@ -3,6 +3,7 @@
 ob_start();
 
 require_once "common_function.php";
+require_once "test_form_data.php";
 
 // 引数がない場合の為のエラー回避 @と変な引数が入った場合の型指定を行う
 $test_form_id = (string) @$_GET["test_form_id"];
@@ -14,32 +15,13 @@ if ($test_form_id === "") {
 }
 // var_dump($test_form_id);
 
-// DB接続
-$dbh = get_dbh();
-// sql文
-$sql = "SELECT * FROM test_form WHERE test_form_id = :test_form_id";
+// idからデータを取得し変数に格納
+$d = get_test_form($test_form_id);
 
-$pre = $dbh->prepare($sql);
-
-//bind
-$pre->bindValue(":test_form_id", $test_form_id, PDO::PARAM_INT);
-
-$r = $pre->execute();
-
-if ($r === false) {
-    echo "システムにエラーが起きました。";
-    exit();
-}
-
-$data = $pre->fetchAll(PDO::FETCH_ASSOC);
-
-// 最低限エラーチェック
-if (empty($data)) {
+if (empty($d)) {
     header("Location: ./admin_data_list.php");
     exit();
 }
-
-$d = $data[0];
 ?>
 
 <!DOCTYPE html>
