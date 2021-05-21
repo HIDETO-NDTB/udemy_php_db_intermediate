@@ -1,6 +1,15 @@
 <?php
 
+session_start();
+
 require_once "common_function.php";
+
+// セッションのエラー情報を受け取る
+$error_detail = [];
+if (isset($_SESSION["output_buffer"]["csrf_token"])) {
+    $error_detail = $_SESSION["output_buffer"]["csrf_token"];
+}
+unset($_SESSION["output_buffer"]["csrf_token"]);
 
 // DB接続
 $dbh = get_dbh();
@@ -21,7 +30,9 @@ if ($r === false) {
 
 $data = $pre->fetchAll(PDO::FETCH_ASSOC);
 
-// var_dump($data);
+// データ削除用のトークンを発行
+$csrf_token = create_csrf_token_admin();
+
 ?>
 
 <!DOCTYPE html>
@@ -36,6 +47,9 @@ $data = $pre->fetchAll(PDO::FETCH_ASSOC);
 <body>
   <div class="container">
   <h4 style="margin-top: 50px; margin-bottom: 20px;">フォーム内容一覧</h4>
+  <?php if (!empty($error_detail)): ?>
+  <span class="text-danger">CSRFトークンでエラーが起きました。正しい遷移を5分以内にして下さい。</span>
+  <?php endif; ?>
     <table class="table table-hover">
       <?php foreach ($data as $d): ?>
         <tr>
@@ -49,6 +63,15 @@ $data = $pre->fetchAll(PDO::FETCH_ASSOC);
           <td><a class="btn btn-primary" href="./admin_data_update.php?test_form_id=<?php echo rawurldecode(
               $d["test_form_id"]
           ); ?>">修正</a></td>
+          <form action="./admin_data_delete.php" method="POST">
+            <input type="hidden" name="test_form_id" value="<?php echo h(
+                $d["test_form_id"]
+            ); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo h(
+                $csrf_token
+            ); ?>">
+            <td><button type="submit" class="btn btn-danger" onclick="return confirm('本当に削除しますか？')">削除</button></td>
+          </form>
         </tr>
     <?php endforeach; ?>
     </table>
