@@ -11,11 +11,33 @@ if (isset($_SESSION["output_buffer"]["csrf_token"])) {
 }
 unset($_SESSION["output_buffer"]["csrf_token"]);
 
+// sortのGETデータを受け取る。空の場合はデフォルトとしてtest_form_idを詰める
+if (isset($_GET["sort"])) {
+    $sort = $_GET["sort"];
+} else {
+    $sort = "test_form_id";
+}
+
+// sortをsql文に流す為のリスト
+$sort_list = [
+    "test_form_id" => "test_form_id",
+    "test_form_id_desc" => "test_form_id DESC",
+    "name" => "name",
+    "name_desc" => "name DESC",
+    "created" => "created",
+    "created_desc" => "created DESC",
+    "updated" => "updated",
+    "updated_desc" => "updated DESC",
+];
+
 // DB接続
 $dbh = get_dbh();
 
 // sql文
 $sql = "SELECT * FROM test_form";
+
+// sortをsqlに追加
+$sql .= " ORDER BY " . $sort_list[$sort] . ";";
 
 $pre = $dbh->prepare($sql);
 
@@ -33,6 +55,17 @@ $data = $pre->fetchAll(PDO::FETCH_ASSOC);
 // データ削除用のトークンを発行
 $csrf_token = create_csrf_token_admin();
 
+// sortのマークを切り替える関数
+function change_mark($type, $mark)
+{
+    $str = "";
+    if ($GLOBALS["sort"] === $type) {
+        $str = "<a href='./admin_data_list.php?sort={$type}' class='text-danger'>{$mark}</a>";
+    } else {
+        $str = "<a href='./admin_data_list.php?sort={$type}' class='text-muted'>{$mark}</a>";
+    }
+    return $str;
+}
 ?>
 
 <!DOCTYPE html>
@@ -51,6 +84,24 @@ $csrf_token = create_csrf_token_admin();
   <span class="text-danger">CSRFトークンでエラーが起きました。正しい遷移を5分以内にして下さい。</span>
   <?php endif; ?>
     <table class="table table-hover">
+      <tr>
+        <td><?php echo change_mark(
+            "test_form_id",
+            "▲"
+        ); ?> <?php echo change_mark("test_form_id_desc", "▼"); ?></td>
+        <td><?php echo change_mark("name", "▲"); ?> <?php echo change_mark(
+     "name_desc",
+     "▼"
+ ); ?></td>
+        <td><?php echo change_mark("created", "▲"); ?> <?php echo change_mark(
+     "created_desc",
+     "▼"
+ ); ?></td>
+        <td><?php echo change_mark("updated", "▲"); ?> <?php echo change_mark(
+     "updated_desc",
+     "▼"
+ ); ?></td>
+      </tr>
       <?php foreach ($data as $d): ?>
         <tr>
           <td><?php echo h($d["test_form_id"]); ?></td>
