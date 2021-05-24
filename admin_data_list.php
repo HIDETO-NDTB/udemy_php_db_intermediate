@@ -3,6 +3,7 @@
 session_start();
 
 require_once "common_function.php";
+require_once "test_form_data.php";
 
 // セッションのエラー情報を受け取る
 $error_detail = [];
@@ -38,6 +39,8 @@ $search_list = [
     "search_birthday_start",
     "search_birthday_end",
     "search_created",
+    "search_like_name",
+    "search_like_post",
 ];
 
 $search_box = [];
@@ -95,12 +98,32 @@ if (!empty($search_box)) {
         $sql_arr[] = " created <= :created_end";
         $bind_arr[":created_end"] = $search_box["search_created"] . " 23:59:59";
     }
+    if (
+        isset($search_box["search_like_name"]) &&
+        !empty($search_box["search_like_name"])
+    ) {
+        $sql_arr[] = " name LIKE :like_name";
+        $bind_arr[":like_name"] =
+            "%" . like_escape($search_box["search_like_name"]) . "%";
+    }
+    if (
+        isset($search_box["search_like_post"]) &&
+        !empty($search_box["search_like_post"])
+    ) {
+        $sql_arr[] = " post LIKE :like_post";
+        $bind_arr[":like_post"] =
+            "%" . like_escape(form_post($search_box["search_like_post"])) . "%";
+    }
+
+    // var_dump($bind_arr);
 
     $sql .= " WHERE " . implode(" AND", $sql_arr);
 }
 
 // sortをsqlに追加
 $sql .= " ORDER BY " . $sort_list[$sort] . ";";
+
+// var_dump($sql);
 
 $pre = $dbh->prepare($sql);
 
@@ -166,6 +189,12 @@ function change_mark($type, $mark)
     検索する「入力日(YYYY-MM-DD)」
     <input type="text" class="search_text" name="search_created" 
     value="<?php echo h(@$search_box["search_created"]); ?>"><br>
+    検索する「名前」(部分一致)
+    <input type="text" class="search_text" name="search_like_name" 
+    value="<?php echo h(@$search_box["search_like_name"]); ?>"><br>
+    検索する「郵便番号」(部分一致)
+    <input type="text" class="search_text" name="search_like_post" 
+    value="<?php echo h(@$search_box["search_like_post"]); ?>"><br>
     <button type="submit" class="btn btn-warning">検索</button>
   </form>
 
@@ -174,6 +203,7 @@ function change_mark($type, $mark)
       <tr>
         <th>ID</th>
         <th>名前</th>
+        <th>郵便番号</th>
         <th>誕生日</th>
         <th>入力日</th>
         <th>更新日 </th>
@@ -187,7 +217,8 @@ function change_mark($type, $mark)
      "name_desc",
      "▼"
  ); ?></td>
-      <td><?php echo change_mark("birthday", "▲"); ?> <?php echo change_mark(
+       <td></td>
+       <td><?php echo change_mark("birthday", "▲"); ?> <?php echo change_mark(
      "birthday_desc",
      "▼"
  ); ?></td>
@@ -204,6 +235,7 @@ function change_mark($type, $mark)
         <tr>
           <td><?php echo h($d["test_form_id"]); ?></td>
           <td><?php echo h($d["name"]); ?></td>
+          <td><?php echo h($d["post"]); ?></td>
           <td><?php echo h($d["birthday"]); ?></td>
           <td><?php echo h($d["created"]); ?></td>
           <td><?php echo h($d["updated"]); ?></td>

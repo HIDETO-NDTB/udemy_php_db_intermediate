@@ -64,7 +64,7 @@ $pre = $dbh->prepare($sql);
 // bind
 $pre->bindValue(":test_form_id", $form_update_data["test_form_id"]);
 $pre->bindValue(":name", $form_update_data["name"]);
-$pre->bindValue(":post", $form_update_data["post"]);
+$pre->bindValue(":post", form_post($form_update_data["post"]));
 $pre->bindValue(":address", $form_update_data["address"]);
 $pre->bindValue(":birthday", $form_update_data["birthday"]);
 $pre->bindValue(":updated", date("Y-m-d h:i:s"));

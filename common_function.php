@@ -131,3 +131,9 @@ function get_dbh()
     }
     return $dbh;
 }
+
+// 部分一致のsearchの為のエスケープ処理
+function like_escape($str)
+{
+    return str_replace(["\\", "%", "_"], ["\\\\", "\\%", "\\_"], $str);
+}

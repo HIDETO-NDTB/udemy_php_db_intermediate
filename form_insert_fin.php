@@ -73,7 +73,7 @@ $pre = $dbh->prepare($sql);
 
 // 値のバインド
 $pre->bindValue(":name", $user_input_data["name"], PDO::PARAM_STR);
-$pre->bindValue(":post", $user_input_data["post"], PDO::PARAM_STR);
+$pre->bindValue(":post", form_post($user_input_data["post"]), PDO::PARAM_STR);
 $pre->bindValue(":address", $user_input_data["address"], PDO::PARAM_STR);
 // birthdayは年月日で分かれているので連結する
 $birthday = "{$user_input_data["birthday_yy"]}-{$user_input_data["birthday_mm"]}-{$user_input_data["birthday_dd"]}";

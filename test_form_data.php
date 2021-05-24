@@ -62,3 +62,9 @@ function error_validate($d)
 
     return $error_detail;
 }
+
+// 郵便番号を整形するfunction
+function form_post($post)
+{
+    return str_replace([" ", "-"], ["", ""], $post);
+}
