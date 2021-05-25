@@ -1,5 +1,6 @@
 <?php
 
+ob_start();
 session_start();
 
 require_once "common_function.php";
@@ -57,10 +58,11 @@ foreach ($search_list as $list) {
 $dbh = get_dbh();
 
 // sql文
-$sql = "SELECT * FROM test_form";
+$sql_from = " FROM test_form";
 
 // searchをsqlに追加
 $sql_arr = $bind_arr = [];
+$sql_where = "";
 if (!empty($search_box)) {
     if (
         isset($search_box["search_name"]) &&
@@ -116,28 +118,60 @@ if (!empty($search_box)) {
     }
 
     // var_dump($bind_arr);
-
-    $sql .= " WHERE " . implode(" AND", $sql_arr);
+    $sql_where = " WHERE " . implode(" AND", $sql_arr);
 }
 
 // sortをsqlに追加
-$sql .= " ORDER BY " . $sort_list[$sort] . ";";
+$sql_sort = " ORDER BY " . $sort_list[$sort];
 
+// ページ数のGETデータを取得
+if (isset($_GET["p"])) {
+    $current_page = (int) $_GET["p"];
+    unset($_GET["p"]);
+    if ($current_page < 1) {
+        $current_page = 1;
+    }
+} else {
+    $current_page = 1;
+}
+$page_contents_num = 5;
+
+$sql_limit = " LIMIT :content_num, :page_contents";
+$bind_arr[":content_num"] = ($current_page - 1) * $page_contents_num;
+$bind_arr[":page_contents"] = $page_contents_num;
+
+// sql文の結合
+$sql_select_count = "SELECT count(test_form_id)";
+$sql_select = "SELECT *";
+
+$sql_count = $sql_select_count . $sql_from . $sql_where . ";";
+$sql = $sql_select . $sql_from . $sql_where . $sql_sort . $sql_limit . ";";
 // var_dump($sql);
 
+$pre_count = $dbh->prepare($sql_count);
 $pre = $dbh->prepare($sql);
 
 // searchの為のbind
 foreach ($bind_arr as $key => $val) {
+    $pre_count->bindValue($key, $val);
     $pre->bindValue($key, $val);
 }
 
+$r_count = $pre_count->execute();
 $r = $pre->execute();
 
-if ($r === false) {
+if ($r === false || $r_count === false) {
     echo "システムにエラーが発生しました。";
     exit();
 }
+
+// DBに登録されているデータの数
+$temp_arr = [];
+$temp_arr = $pre_count->fetch(PDO::FETCH_ASSOC);
+$count_contents = $temp_arr["count(test_form_id)"];
+// var_dump($count_contents);
+// ページネーションの総ページ
+$total_page = ceil($count_contents / $page_contents_num);
 
 $data = $pre->fetchAll(PDO::FETCH_ASSOC);
 
@@ -257,6 +291,30 @@ function change_mark($type, $mark)
         </tr>
     <?php endforeach; ?>
     </table>
+    <nav aria-label="Page navigation example">
+      <ul class="pagination">
+        <?php if ($current_page !== 1): ?>
+          <li class="page-item"><a class="page-link" href="./admin_data_list.php?sort=<?php echo rawurldecode(
+              $sort
+          ); ?>&p=<?php echo rawurldecode($current_page - 1); ?>">前へ</a></li>
+        <?php endif; ?>
+        <?php for ($i = 1; $i <= $total_page; $i++): ?>
+          <?php if ($i === $current_page): ?>
+            <li class="page-item active"><a class="page-link" href="#"><?php echo $i; ?></a></li>
+          <?php else: ?>
+            <li class="page-item"><a class="page-link" 
+            href="./admin_data_list.php?sort=<?php echo rawurldecode(
+                $sort
+            ); ?>&p=<?php echo rawurldecode($i); ?>"><?php echo $i; ?></a></li>
+          <?php endif; ?>
+        <?php endfor; ?>
+        <?php if ($current_page !== (int) $total_page): ?>
+          <li class="page-item"><a class="page-link" href="./admin_data_list.php?sort=<?php echo rawurldecode(
+              $sort
+          ); ?>&p=<?php echo rawurldecode($current_page + 1); ?>">次へ</a></li>
+        <?php endif; ?>
+      </ul>
+    </nav>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
